@@ -64,7 +64,7 @@ def world_cup_promo():
 
     try:
         # تقليل الـ timeout لـ 8 ثوانٍ؛ لأن العملية أصبحت مباشرة ومباشرة جداً
-        r_login = requests.post(login_url, data=login_payload, headers=HEADERS, timeout=8)
+        r_login = requests.post(login_url, data=login_payload, headers=HEADERS, timeout=20)
     except Exception:
         return jsonify({"status": "error", "message": "ضعف في الاتصال بسيرفر فودافون، يرجى المحاولة مجدداً 🌐"}), 500
 
