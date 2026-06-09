@@ -21,7 +21,7 @@ def world_cup_promo():
 
     # --- الخطوة 1: تجهيز الصورة وتحويلها لـ Base64 تلقائياً ---
     try:
-        img_data = requests.get("https://i.postimg.cc/XNg5L1r6/IMG-20260609-182037.jpg",
+        img_data = requests.get("https://i.postimg.cc/XNg5L1r6/IMG-20260609-182037.jpg", 
                                 headers={"User-Agent": "Mozilla/5.0"}, timeout=15).content
         img = Image.open(BytesIO(img_data)).convert("RGB")
         img.thumbnail((800, 800))
@@ -42,10 +42,10 @@ def world_cup_promo():
 
     login_url = "https://mobile.vodafone.com.eg/auth/realms/vf-realm/protocol/openid-connect/token"
     login_payload = {
-        'grant_type': "password",
-        'username': number,
+        'grant_type': "password", 
+        'username': number, 
         'password': password,
-        'client_secret': "dca0pbLUWXVhXR266Gw1iT5rqwvvJQoN",
+        'client_secret': "dca0pbLUWXVhXR266Gw1iT5rqwvvJQoN", 
         'client_id': "AnaVF"
     }
 
@@ -71,13 +71,13 @@ def world_cup_promo():
     }
 
     promo_url = "https://web.vodafone.com.eg/services/dxl/promo/promotion"
-   
+    
     try:
         promos_res = requests.get(promo_url,
             params={'@type': "Promo", '$.context.type': "worldCupWow26"},
             headers={**WEB_HEADERS, 'Referer': "https://web.vodafone.com.eg/portal/bf/worldCup26/home?isPostMessages=false"},
             timeout=20)
-       
+        
         promos = promos_res.json()
         if not isinstance(promos, list) or not promos:
             return jsonify({"status": "error", "message": "لا يوجد عرض متاح لكأس العالم لهذا الرقم حالياً 🤷‍♂️"}), 404
@@ -88,7 +88,7 @@ def world_cup_promo():
     # --- الخطوة 4: إرسال الصورة وتفعيل الـ 500 ميجا ---
     journey_url = "https://web.vodafone.com.eg/services/dxl/pj/wc/journey/promoJourney"
     journey_payload = {
-        "@type": "worldCupWow26",
+        "@type": "worldCupWow26", 
         "id": promo_id,
         "attachment": [{"attachmentType": "Image", "content": image_base64, "mimeType": "image/jpeg"}],
         "characteristics": [{"name": "pharaohName", "value": "tutankhamun"}]
