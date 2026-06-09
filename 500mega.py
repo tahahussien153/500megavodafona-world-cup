@@ -8,7 +8,7 @@ from PIL import Image
 from io import BytesIO
 
 app = Flask(__name__)
-CORS(app)  # للسماح لصفحة الـ HTML بالاتصال بالسيرفر بدون مشاكل الـ CORS
+CORS(app)  # للسماح لصفحة الـ HTML بالاتصال بالسيرفر دون مشاكل الأمان
 
 @app.route('/worldcup', methods=['POST'])
 def world_cup_promo():
@@ -22,7 +22,7 @@ def world_cup_promo():
     # --- الخطوة 1: تجهيز الصورة وتحويلها لـ Base64 تلقائياً ---
     try:
         img_data = requests.get("https://i.postimg.cc/XNg5L1r6/IMG-20260609-182037.jpg", 
-                                headers={"User-Agent": "Mozilla/5.0"}, timeout=15).content
+                                headers={"User-Agent": "Mozilla/5.0"}, timeout=10).content
         img = Image.open(BytesIO(img_data)).convert("RGB")
         img.thumbnail((800, 800))
         buffer = BytesIO()
@@ -31,13 +31,17 @@ def world_cup_promo():
     except Exception as e:
         return jsonify({"status": "error", "message": f"فشل في معالجة الصورة بالسيرفر: {str(e)}"}), 500
 
-    # --- الخطوة 2: تسجيل الدخول وجلب التوكن ---
+    # --- الخطوة 2: تسجيل الدخول وجلب التوكن (نسخة معدلة ضد التعليق) ---
     HEADERS = {
-        'User-Agent': "okhttp/4.12.0", 'Accept': "application/json, text/plain, */*",
-        'Accept-Encoding': "gzip", 'silentLogin': "true", 'msisdn': number,
-        'x-agent-operatingsystem': "15", 'clientId': "AnaVodafoneAndroid", 'Accept-Language': "ar",
-        'x-agent-device': "OPPO CPH2565", 'x-agent-version': "2026.4.1",
-        'x-agent-build': "1139", 'digitalId': "28LZHSGCX7QC4", 'device-id': "aba8140ecd392169"
+        'User-Agent': "Mozilla/5.0 (Linux; Android 13; Xiaomi) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Mobile Safari/537.36", 
+        'Accept': "application/json, text/plain, */*",
+        'Accept-Encoding': "gzip, deflate, br", 
+        'silentLogin': "true", 
+        'msisdn': number,
+        'clientId': "AnaVodafoneAndroid", 
+        'Accept-Language': "ar",
+        'X-Requested-With': "com.emeint.android.myservices",
+        'Connection': "keep-alive"
     }
 
     login_url = "https://mobile.vodafone.com.eg/auth/realms/vf-realm/protocol/openid-connect/token"
@@ -50,9 +54,10 @@ def world_cup_promo():
     }
 
     try:
-        r_login = requests.post(login_url, data=login_payload, headers=HEADERS, timeout=20)
+        # تقليل الـ timeout لـ 7 ثوانٍ لعدم التعليق في حالة حظر السيرفر
+        r_login = requests.post(login_url, data=login_payload, headers=HEADERS, timeout=7)
     except Exception:
-        return jsonify({"status": "error", "message": "فشل الاتصال بسيرفر فودافون لتسجيل الدخول 🌐"}), 500
+        return jsonify({"status": "error", "message": "سيرفر فودافون يرفض الاتصال من خارج مصر حالياً 🌐"}), 500
 
     if r_login.status_code != 200:
         return jsonify({"status": "error", "message": "رقم الهاتف أو كلمة السر خطأ ❌"}), 401
@@ -76,7 +81,7 @@ def world_cup_promo():
         promos_res = requests.get(promo_url,
             params={'@type': "Promo", '$.context.type': "worldCupWow26"},
             headers={**WEB_HEADERS, 'Referer': "https://web.vodafone.com.eg/portal/bf/worldCup26/home?isPostMessages=false"},
-            timeout=20)
+            timeout=10)
         
         promos = promos_res.json()
         if not isinstance(promos, list) or not promos:
@@ -99,7 +104,7 @@ def world_cup_promo():
             data=json.dumps(journey_payload),
             headers={**WEB_HEADERS, 'Origin': "https://web.vodafone.com.eg",
                      'Referer': "https://web.vodafone.com.eg/portal/bf/worldCup26/camera?isPostMessages=false"},
-            timeout=60)
+            timeout=15)
     except Exception:
         return jsonify({"status": "error", "message": "انتهت مهلة الطلب أثناء تفعيل العرض ⏱️"}), 504
 
@@ -114,6 +119,5 @@ def world_cup_promo():
         return jsonify({"status": "error", "message": f"فشل تفعيل العرض: {err_msg}"}), 400
 
 if __name__ == "__main__":
-    # قراءة بورت المنصة تلقائياً (مهم جداً لـ Railway لكي يعمل)
     port = int(os.environ.get("PORT", 8080))
     app.run(host='0.0.0.0', port=port)
